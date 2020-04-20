@@ -39,9 +39,9 @@ pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cud
 
 2. Install other python packages you may require:
 
-collections, future, matplotlib, numpy, PIL, pyyaml, shutil, tensorboard, tqdm
+collections, future, matplotlib, numpy, PIL, shutil, tensorboard, tqdm
 
-3. Download the code and prepare the scripts:
+1. Download the code and prepare the scripts:
 
 ```
 git clone https://github.com/voldemortX/DST-CBC.git
@@ -132,7 +132,7 @@ tensorboard --logdir=logs
 To evaluate a model (e.g. might need evaluation on *val* when trained with *valtiny*):
 
 ```
-Python main.py --state=3 --dataset=voc/city --continue-from=your_model.pt --mixed-precision --coco
+python main.py --state=3 --dataset=voc/city --continue-from=your_model.pt --mixed-precision --coco
 ```
 
 We also provide the exact scripts to reproduce the ablation studies in **Table 2** of our paper with *ablations_a.sh* and *ablations_b.sh*.
