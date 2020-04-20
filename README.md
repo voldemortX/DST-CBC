@@ -160,5 +160,10 @@ Issues and PRs are also welcomed.
 ## Citation
 
 ```
-
+@article{feng2020semi,
+  title={Semi-Supevised Semantic Segmentation via Dynamic Self-Training and Class-Balanced Curriculum},
+  author={Feng, Zhengyang and Zhou, Qianyu and Cheng, Guangliang and Tan, Xin and Shi, Jianping and Ma, Lizhuang},
+  journal={arXiv preprint arXiv:2020.},
+  year={2020}
+}
 ```
