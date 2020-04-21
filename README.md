@@ -1,6 +1,6 @@
 # Semi-Supevised Semantic Segmentation via Dynamic Self-Training and Class-Balanced Curriculum
 
-This repository contains the code for our paper [DST-CBC](https://arxiv.org), a concise and effective method for semi-supervised semantic segmentation. 
+This repository contains the code for our paper [DST-CBC](https://arxiv.org/abs/2004.08514), a concise and effective method for semi-supervised semantic segmentation. 
 
 ## Main results
 
@@ -163,7 +163,7 @@ Issues and PRs are also welcomed.
 @article{feng2020semi,
   title={Semi-Supevised Semantic Segmentation via Dynamic Self-Training and Class-Balanced Curriculum},
   author={Feng, Zhengyang and Zhou, Qianyu and Cheng, Guangliang and Tan, Xin and Shi, Jianping and Ma, Lizhuang},
-  journal={arXiv preprint arXiv:2020.},
+  journal={arXiv preprint arXiv:2004.08514},
   year={2020}
 }
 ```
