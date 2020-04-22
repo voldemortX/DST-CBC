@@ -139,6 +139,9 @@ We also provide the exact scripts to reproduce the ablation studies in **Table 2
 
 However, in order to provide a strictly controlled experiment, our hyperparameter setting is selected with a fixed round 0 baseline model on random split 1. So the setting is slightly biased toward random split 1 and that exact round 0 model (resulting in 70.33 mIoU in Table 2 and the averaged result of 69.3 mIoU in Table 3 of our paper). Although the relative performance differences remains similar. For completeness, we provide the download of that round 0 model we originally used, 61.68 mIoU, on this [link](https://drive.google.com/open?id=1nkNG7dN8bCFWX-8-xd7tnzTzr_YnpxMx). 
 
+## Understand the code
+We refer interested readers to this repository's [wiki](https://github.com/voldemortX/DST-CBC/wiki).
+
 ## Acknowledgements
 
 The DeepLabV2 network architecture is faithfully re-implemented from [AdvSemiSeg](https://github.com/hfslyc/AdvSemiSeg).
