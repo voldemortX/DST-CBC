@@ -1,4 +1,4 @@
-# Semi-Supevised Semantic Segmentation via Dynamic Self-Training and Class-Balanced Curriculum
+# Semi-Supervised Semantic Segmentation via Dynamic Self-Training and Class-Balanced Curriculum
 
 This repository contains the code for our paper [DST-CBC](https://arxiv.org/abs/2004.08514), a concise and effective method for semi-supervised semantic segmentation. 
 
