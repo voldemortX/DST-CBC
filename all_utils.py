@@ -408,7 +408,7 @@ def generate_pseudo_labels(net, device, loader, num_classes, input_size, cbst_th
 # Reimplemented(all converted to tensor ops) based on yzou2/CRST
 def generate_class_balanced_pseudo_labels(net, device, loader, label_ratio, num_classes, input_size,
                                           down_sample_rate=16):
-    # Generate pseudo labels and save to disk with CRST-MR/CBST(~ 6min with down_sample_rate=4 on PASCAL VOC)
+    # Generate pseudo labels and save to disk (~ 6min with down_sample_rate=4 on PASCAL VOC)
     # Max theoretical memory usage for PASCAL VOC = 10582*321*321*4B / down_sample_rate ~ 4160MB/down_sample_rate on CPU
     # Max memory usage surge ratio has an upper limit of 2x(caused by array concatenation)
     # Note that tensor.expand() does not allocate new memory,
