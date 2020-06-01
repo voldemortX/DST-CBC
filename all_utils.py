@@ -380,7 +380,7 @@ def generate_pseudo_labels(net, device, loader, num_classes, input_size, cbst_th
             # Generate pseudo labels(N x d1 x d2)
             # Beware, this algorithm ain't right(but we use this to be consistent with CBST)
             # e.g. softmax result [0.9, 0.1] with thresholds [0.9, 0.09], the label will change, but
-            # this almost doesn't happen at all!
+            # this almost doesn't happen, we just look out for it when labeling 100% data (up to 1% error rate)
             permuted = torch.nn.functional.softmax(input=outputs, dim=1)  # ! softmax
             permuted = permuted.permute((0, 2, 3, 1))
             permuted = permuted / cbst_thresholds
