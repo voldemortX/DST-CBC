@@ -28,7 +28,7 @@ This repository contains the code for our paper [DST-CBC](https://arxiv.org/abs/
 ## Preparations
 You'll need a CUDA 10, Python3 enviroment (best on Linux) with PyTorch 1.2.0, TorchVision 0.4.0 and Apex to run the code in this repo.
 
-1. Setup the exact version of Apex & PyTorch & TorchVision for mixed precision training:
+### 1. Setup the exact version of Apex & PyTorch & TorchVision for mixed precision training:
 
 ```
 pip install https://download.pytorch.org/whl/cu100/torch-1.2.0-cp36-cp36m-manylinux1_x86_64.whl && pip install https://download.pytorch.org/whl/cu100/torchvision-0.4.0-cp36-cp36m-manylinux1_x86_64.whl
@@ -38,11 +38,11 @@ pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cud
 ```
 !There seems to be an issue of apex installations from the official repo sometimes. If you encounter errors, we suggest you use our stored older apex [codes](https://drive.google.com/open?id=1x8enpvdTTZ3RChf17XvcLdSYulUPg3sR).
 
-2. Install other python packages you may require:
+### 2. Install other python packages you may require:
 
 collections, future, matplotlib, numpy, PIL, shutil, tensorboard, tqdm
 
-1. Download the code and prepare the scripts:
+### 3. Download the code and prepare the scripts:
 
 ```
 git clone https://github.com/voldemortX/DST-CBC.git
@@ -50,7 +50,7 @@ cd DST-CBC
 chmod 777 *.sh
 ```
 
-4. Download and convert the pre-trained model:
+### 4. Download and convert the pre-trained model:
 
 Pytorch automitically downloads the ImageNet pre-trained models, for the exact COCO-pretrained model used in previous work [AdvSemiSeg](https://github.com/hfslyc/AdvSemiSeg):
 
@@ -58,7 +58,7 @@ Pytorch automitically downloads the ImageNet pre-trained models, for the exact C
 ./prepare_coco.sh
 ```
 
-5. Prepare the datasets:
+### 5. Prepare the datasets:
 
 The PASCAL VOC 2012 dataset we used is the commonly used 10582 training set version. If you don't already have that dataset, we refer you to [Google](https://www.google.com) or this [blog](https://www.sun11.me/blog/2018/how-to-use-10582-trainaug-images-on-DeeplabV3-code/).
 
@@ -70,7 +70,7 @@ When you have done all above procedures and got the datasets, you also need to c
 python cityscapes_data_lists.py
 ```
 
-6. Prepare the data splits used in the paper:
+### 6. Prepare the data splits used in the paper:
 
 We already provided the exact data splits, including *valtiny* [here](https://github.com/voldemortX/DST-CBC/tree/master/data_splits), if you use Python 3.6, you should be getting the same data splits using *generate_splits.py*. The data splits for PASCAL VOC 2012 need to be placed at: 
 
