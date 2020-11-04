@@ -2,7 +2,8 @@
 
 This repository contains the code for our paper [DST-CBC](https://arxiv.org/abs/2004.08514), a concise and effective method for semi-supervised semantic segmentation.
 
-Stay tuned for Dynamic Mutual Training (DMT), an updated version of DST-CBC, which has overall better and stabler performance and will be released early November.
+~~Stay tuned for Dynamic Mutual Training (DMT), an updated version of DST-CBC, which has overall better and stabler performance and will be released early November.~~
+**A new version Dynamic Mutual Training (DMT) will be released later, which has overall better and stabler performance**
 
 ## Main results
 
