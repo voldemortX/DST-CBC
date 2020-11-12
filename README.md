@@ -8,7 +8,7 @@ This repository contains the code for our paper [DST-CBC](https://arxiv.org/abs/
 ~~Stay tuned for Dynamic Mutual Training (DMT), an updated version of DST-CBC, which has overall better and stabler performance and will be released early November.~~
 **A new version Dynamic Mutual Training (DMT) will be released later, which has overall better and stabler performance.**
 
-Also, thanks to [**@lorenmt**](https://github.com/lorenmt), a data augmentation bug fix will be released along with the next version, where PASCAL VOC performance is overall boosted by ~2%, Cityscapes should also have better performance. Now the baseline results should match [PixelSSL](https://github.com/ZHKKKe/PixelSSL), but probably the gap to oracle will remain similar.
+Also, thanks to [**@lorenmt**](https://github.com/lorenmt), a data augmentation bug fix will be released along with the next version, where PASCAL VOC performance is overall boosted by 1~2%, Cityscapes could also have better performance. But probably the gap to oracle will remain similar.
 
 ## Main results
 
