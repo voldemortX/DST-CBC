@@ -4,26 +4,7 @@ Untested bug fix for random scale.
 
 ## Main results
 
-### Semi-supervised semantic segmentation *mIOU* on PASCAL VOC 2012 *val*:
-
-| method | 1/106<br>(100 labels) | 1/50 | 1/20 | 1/8 | 1/4 | full<br>(oracle) |
-|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| DeepLabV2 (fs only) | 45.7<br>(62.2%) | 55.4<br>(75.4%) | 62.2<br>(84.6%) | 66.2<br>(90.1%) | 68.7<br>(93.5%) | 73.5<br>(100%) |
-| CowMix | 52.1<br>(71.0%) | - | - | - | 71.0<br>(96.7%) | 73.4<br>(100%) |
-| Hung et al. | 38.8<br>(51.8%) | 57.2<br>(76.4%) | 64.7<br>(86.4%) | 69.5<br>(92.8%) | 72.1<br>(96.3%) | 74.9<br>(100%) |
-| S4GAN + MLMT | - | 63.3<br>(83.7%) | 67.2<br>(88.9%) | 71.4<br>(94.4%) | - | 75.6<br>(100%) |
-| **DST-CBC** | 61.6<br>**(83.8%)** | 65.5<br>**(89.1%)** | 69.3<br>**(94.3%)** | 70.7<br>**(96.2%)** | 71.8<br>**(97.7%)** | 73.5<br>(100%) |
-
-### Semi-supervised semantic segmentation *mIoU* on Cityscapes *val*:
-
-| method | 1/30<br>(100 labels) | 1/8 | 1/4 | full<br>(oracle) |
-|:--:|:--:|:--:|:--:|:--:|
-| DeepLabV2 (fs only) | 45.5<br>(68.0%) | 56.7<br>(84.8%) | 61.1<br>(91.3%) | 66.9<br>(100%) |
-| CowMix | 49.0<br>(71.0%) | 60.5<br>(87.7%) | 64.1<br>(92.9%) | 69.0<br>(100%) |
-| Hung et al. | - | 58.8<br>(86.9%) | 62.3<br>(92.0%) | 67.7<br>(100%) |
-| S4GAN + MLMT | - | 59.3<br>(90.1%) | 61.9<br>(94.1%) | 65.8<br>(100%) |
-| **DST-CBC** | 48.7<br>**(72.8%)** | 60.5<br>**(90.4%)** | 64.4<br>**(96.3%)** | 66.9<br>(100%) |
-
+Untested.
 
 ## Preparations
 You'll need a CUDA 10, Python3 enviroment (best on Linux) with PyTorch 1.2.0, TorchVision 0.4.0 and Apex to run the code in this repo.
@@ -137,10 +118,6 @@ To evaluate a model (e.g. might need evaluation on *val* when trained with *valt
 ```
 python main.py --state=3 --dataset=voc/city --continue-from=your_model.pt --mixed-precision --coco
 ```
-
-We also provide the exact scripts to reproduce the ablation studies in **Table 2** of our paper with *ablations_a.sh* and *ablations_b.sh*.
-
-However, in order to provide a strictly controlled experiment, our hyperparameter setting is selected with a fixed round 0 baseline model on random split 1. So the setting is slightly biased toward random split 1 and that exact round 0 model (resulting in 70.33 mIoU in Table 2 and the averaged result of 69.3 mIoU in Table 3 of our paper). Although the relative performance differences remains similar. For completeness, we provide the download of that round 0 model we originally used, 61.68 mIoU, on this [link](https://drive.google.com/open?id=1nkNG7dN8bCFWX-8-xd7tnzTzr_YnpxMx). 
 
 ## Understand the code
 We refer interested readers to this repository's [wiki](https://github.com/voldemortX/DST-CBC/wiki).
