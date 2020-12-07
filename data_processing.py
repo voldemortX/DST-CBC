@@ -90,18 +90,21 @@ class StandardSegmentationDataset(torchvision.datasets.VisionDataset):
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
         if self.has_label:
-            # Return x(input image) & y(mask images as a list)
+            # Return x (input image) & y (mask images as a list)
             # Supports .png & .npy
             target = Image.open(self.masks[index]) if '.png' in self.masks[index] else np.load(self.masks[index])
+            # Transforms
+            if self.transforms is not None:
+                img, target = self.transforms(img, target)
+            return img, target
         else:
-            # Return x(input image) & file names as a list to store pseudo label
+            # Return x (input image) & filenames & original image size as a list to store pseudo label
             target = self.masks[index]
-
-        # Transforms
-        if self.transforms is not None:
-            img, target = self.transforms(img, target)
-
-        return img, target
+            w, h = img.size
+            # Transforms
+            if self.transforms is not None:
+                img, target, h, w = self.transforms(img, target, h, w)
+            return img, target, h, w
 
     def __len__(self):
         return len(self.images)

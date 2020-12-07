@@ -11,6 +11,7 @@ from data_processing import StandardSegmentationDataset, SegmentationLabelsDatas
                             base_city, base_voc, label_id_map_city
 from transforms import ToTensor, Normalize, RandomHorizontalFlip, RandomCrop, RandomResize, Resize, LabelMap, ZeroPad, \
                        Compose, RandomScale
+from functional import crop
 
 
 def deeplab_v2(num_classes):
@@ -124,14 +125,11 @@ def init(batch_size, state, split, input_sizes, sets_id, std, mean, keep_scale, 
                  RandomCrop(size=input_sizes[0]),
                  RandomHorizontalFlip(flip_prob=0.5),
                  Normalize(mean=mean, std=std)])
-        transform_pseudo = Compose(
-            [ToTensor(keep_scale=keep_scale, reverse_channels=reverse_channels),
-             Resize(size_image=input_sizes[0], size_label=input_sizes[0]),
-             Normalize(mean=mean, std=std)])
         transform_test = Compose(
             [ToTensor(keep_scale=keep_scale, reverse_channels=reverse_channels),
              ZeroPad(size=input_sizes[2]),
              Normalize(mean=mean, std=std)])
+        transform_pseudo = transform_test
     elif data_set == 'city':  # All the same size (whole set is down-sampled by 2)
         base = base_city
         workers = 8
@@ -365,6 +363,7 @@ def test_one_set(loader, device, net, categories, num_classes, output_size):
 def generate_pseudo_labels(net, device, loader, num_classes, input_size, cbst_thresholds=None):
     # Generate pseudo labels and save to disk (negligible time compared with training)
     # Not very sure if there are any cache inconsistency issues (technically this should be fine)
+    net.eval()
 
     # 1 forward pass (hard labels)
     if cbst_thresholds is None:  # Default
@@ -373,36 +372,30 @@ def generate_pseudo_labels(net, device, loader, num_classes, input_size, cbst_th
     net.eval()
     labeled_counts = 0
     ignored_counts = 0
-
     with torch.no_grad():
-        for images, file_name_lists in tqdm(loader):
+        for images, file_name_lists, heights, widths in tqdm(loader):
             images = images.to(device)
             outputs = net(images)['out']
             outputs = torch.nn.functional.interpolate(outputs, size=input_size, mode='bilinear', align_corners=True)
 
-            # Generate pseudo labels(N x d1 x d2)
-            # Beware, this algorithm ain't right(but we use this to be consistent with CBST)
-            # e.g. softmax result [0.9, 0.1] with thresholds [0.9, 0.09], the label will change, but
-            # this almost doesn't happen, we just look out for it when labeling 100% data (up to 1% error rate)
-            permuted = torch.nn.functional.softmax(input=outputs, dim=1)  # ! softmax
-            permuted = permuted.permute((0, 2, 3, 1))
-            permuted = permuted / cbst_thresholds
-            temp = permuted.max(dim=-1)
-            pseudo_labels = temp.indices
-            weighted_values = temp.values
-            pseudo_labels[weighted_values < 1] = 255
+            # Generate pseudo labels (d1 x d2)
+            for i in range(0, len(file_name_lists)):
+                prediction = crop(outputs[i], 0, 0, heights[i], widths[i])  # Back to the original size
+                prediction = prediction.softmax(dim=0)  # ! softmax
+                temp = prediction.max(dim=0)
+                pseudo_label = temp.indices
+                values = temp.values
+                for j in range(num_classes):
+                    pseudo_label[((pseudo_label == j) * (values < cbst_thresholds[j]))] = 255
 
-            # Counting & Saving
-            labeled_counts += (pseudo_labels != 255).sum().item()
-            ignored_counts += (pseudo_labels == 255).sum().item()
-            pseudo_labels = pseudo_labels.cpu().numpy().astype(np.uint8)  # Data type will be changed in loading
-            for j in range(0, len(file_name_lists)):
-                if '.png' in file_name_lists[j]:
-                    Image.fromarray(pseudo_labels[j, :, :]).save(file_name_lists[j])
-                elif '.npy' in file_name_lists[j]:
-                    np.save(file_name_lists[j], pseudo_labels[j, :, :])
-                else:
-                    raise TypeError
+                # Counting & Saving
+                labeled_counts += (pseudo_label != 255).sum().item()
+                ignored_counts += (pseudo_label == 255).sum().item()
+                pseudo_label = pseudo_label.cpu().numpy().astype(np.uint8)
+                if '.png' in file_name_lists[i]:
+                    Image.fromarray(pseudo_label).save(file_name_lists[i])
+                elif '.npy' in file_name_lists[i]:
+                    np.save(file_name_lists[i], pseudo_label)
 
     # Return overall labeled ratio
     return labeled_counts / (labeled_counts + ignored_counts)
@@ -410,47 +403,71 @@ def generate_pseudo_labels(net, device, loader, num_classes, input_size, cbst_th
 
 # Reimplemented(all converted to tensor ops) based on yzou2/CRST
 def generate_class_balanced_pseudo_labels(net, device, loader, label_ratio, num_classes, input_size,
-                                          down_sample_rate=16):
-    # Generate pseudo labels and save to disk (~ 6min with down_sample_rate=4 on PASCAL VOC)
-    # Max theoretical memory usage for PASCAL VOC = 10582*321*321*4B / down_sample_rate ~ 4160MB/down_sample_rate on CPU
-    # Max memory usage surge ratio has an upper limit of 2x(caused by array concatenation)
+                                          down_sample_rate=16, buffer_size=100):
+    # Max memory usage surge ratio has an upper limit of 2x (caused by array concatenation).
+    # Keep a fixed GPU buffer size to achieve a good enough speed-memory trade-off,
+    # since casting to cpu is very slow.
     # Note that tensor.expand() does not allocate new memory,
     # and that Python's list consumes at least 3 times the memory that a typical array would've required,
     # though it is 3 times faster in concatenations, it is rather slow in sorting,
-    # thus the overall time consumption is similar
+    # thus the overall time consumption is similar.
+    # buffer_size: GPU buffer size, MB.
+    # down_sample_rate: Pixel sample ratio, i.e. pick one pixel every #down_sample_rate pixels.
     net.eval()
+    buffer_size = buffer_size * 1024 * 1024 / 12  # MB -> how many pixels
 
     # 1 forward pass (sample predicted probabilities,
     # sorting here is unnecessary since there is relatively negligible time-consumption to consider)
-    if label_ratio >= 1:
-        kc = [0.0001 for _ in range(num_classes)]
-    else:
-        probabilities = [np.array([], dtype=np.float32) for _ in range(num_classes)]
-        with torch.no_grad():
-            for images, _ in tqdm(loader):
-                images = images.to(device)
-                outputs = net(images)['out']
-                outputs = torch.nn.functional.interpolate(outputs, size=input_size, mode='bilinear', align_corners=True)
+    pseudo_label = torch.tensor([], dtype=torch.int64, device=device)
+    pseudo_probability = torch.tensor([], dtype=torch.float32, device=device)
+    probabilities = [np.array([], dtype=np.float32) for _ in range(num_classes)]
+    with torch.no_grad():
+        for images, _, heights, widths in tqdm(loader):
+            images = images.to(device)
+            outputs = net(images)['out']
+            outputs = torch.nn.functional.interpolate(outputs, size=input_size, mode='bilinear', align_corners=True)
 
-                # Generate pseudo labels(N x d1 x d2) and reassemble
-                temp = torch.nn.functional.softmax(input=outputs, dim=1)  # ! softmax
-                temp = temp.max(dim=1)
-                pseudo_labels = temp.indices.flatten()[:: down_sample_rate]
-                pseudo_probabilities = temp.values.flatten()[:: down_sample_rate]
+            # Generate pseudo labels (d1 x d2) and reassemble
+            for i in range(0, len(heights)):
+                prediction = crop(outputs[i], 0, 0, heights[i], widths[i])  # Back to the original size
+                temp = prediction.softmax(dim=0)  # ! softmax
+                temp = temp.max(dim=0)
+                pseudo_label = torch.cat([pseudo_label, temp.indices.flatten()[:: down_sample_rate]])
+                pseudo_probability = torch.cat([pseudo_probability, temp.values.flatten()[:: down_sample_rate]])
 
-                # Count
+            # Count and reallocate
+            if pseudo_probability.shape[0] > buffer_size:
                 for j in range(num_classes):
                     probabilities[j] = np.concatenate((probabilities[j],
-                                                       pseudo_probabilities[pseudo_labels == j].cpu().numpy()))
+                                                       pseudo_probability[pseudo_label == j].cpu().numpy()))
+                pseudo_label = torch.tensor([], dtype=torch.int64, device=device)
+                pseudo_probability = torch.tensor([], dtype=torch.float32, device=device)
 
-        # Sort (n * log(n) << n * label_ratio, so just sort is good) and find kc
-        print('Sorting...')
-        kc = []
-        for j in tqdm(range(num_classes)):
-            probabilities[j].sort()
-            kc.append(probabilities[j][-int(len(probabilities[j]) * label_ratio) - 1])
-        del probabilities  # Better be safe than...
+        # Final count
+        for j in range(num_classes):
+            probabilities[j] = np.concatenate((probabilities[j],
+                                               pseudo_probability[pseudo_label == j].cpu().numpy()))
 
+    # Sort (n * log(n) << n * label_ratio, so just sort is good) and find kc
+    print('Sorting...')
+    kc = []
+    for j in range(num_classes):
+        if len(probabilities[j]) == 0:
+            with open('exceptions.txt', 'a') as f:
+                f.write(str(time.asctime()) + '--' + str(j) + '\n')
+
+    for j in tqdm(range(num_classes)):
+        probabilities[j].sort()
+        if label_ratio >= 1:
+            kc.append(probabilities[j][0])
+        else:
+            if len(probabilities[j]) * label_ratio < 1:
+                kc.append(0.00001)
+            else:
+                kc.append(probabilities[j][-int(len(probabilities[j]) * label_ratio) - 1])
+    del probabilities  # Better be safe than...
+
+    print(kc)
     return generate_pseudo_labels(net=net, device=device, loader=loader, cbst_thresholds=torch.tensor(kc),
                                   input_size=input_size, num_classes=num_classes)
 
