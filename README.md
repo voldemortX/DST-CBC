@@ -1,18 +1,6 @@
 # Semi-Supervised Semantic Segmentation via Dynamic Self-Training and Class-Balanced Curriculum
 
-This repository contains the code for our paper [DST-CBC](https://arxiv.org/abs/2004.08514), a concise and effective method for semi-supervised semantic segmentation.
-
-## News
-
-### 2020.12.7
-
-The bug fix for 2020.12.7 is replacing the random resize operation with random scale and up the Cityscapes fully-supervised learning rate to 0.004. But the performance haven't been tested for the older DST-CBC algorithm so we will not make a new commit to master. For the newest random scale implementation you are encouraged to check out [here](https://github.com/voldemortX/pytorch-auto-drive/blob/cce2c335e90d9000ea65716d388e02def6dfc963/code/transforms/transforms.py#L158). For untested version in DST-CBC, you can check out the **scale** branch.
-
-### 2020.11.9
-~~Stay tuned for Dynamic Mutual Training (DMT), an updated version of DST-CBC, which has overall better and stabler performance and will be released early November.~~
-**A new version Dynamic Mutual Training (DMT) will be released later, which has overall better and stabler performance.**
-
-Also, thanks to [**@lorenmt**](https://github.com/lorenmt), a data augmentation bug fix will be released along with the next version, where PASCAL VOC performance is overall boosted by 1~2%, Cityscapes could also have better performance. But probably the gap to oracle will remain similar.
+Untested bug fix for random scale.
 
 ## Main results
 

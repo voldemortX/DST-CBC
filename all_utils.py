@@ -10,7 +10,7 @@ from torchvision_models.segmentation.segmentation import deeplabv2_resnet101
 from data_processing import StandardSegmentationDataset, SegmentationLabelsDataset, \
                             base_city, base_voc, label_id_map_city
 from transforms import ToTensor, Normalize, RandomHorizontalFlip, RandomCrop, RandomResize, Resize, LabelMap, ZeroPad, \
-                       Compose
+                       Compose, RandomScale
 
 
 def deeplab_v2(num_classes):
@@ -106,7 +106,8 @@ def init(batch_size, state, split, input_sizes, sets_id, std, mean, keep_scale, 
         workers = 4
         transform_train = Compose(
             [ToTensor(keep_scale=keep_scale, reverse_channels=reverse_channels),
-             RandomResize(min_size=input_sizes[0], max_size=input_sizes[1]),
+             # RandomResize(min_size=input_sizes[0], max_size=input_sizes[1]),
+             RandomScale(min_scale=0.5, max_scale=1.5),
              RandomCrop(size=input_sizes[0]),
              RandomHorizontalFlip(flip_prob=0.5),
              Normalize(mean=mean, std=std)])
@@ -118,7 +119,8 @@ def init(batch_size, state, split, input_sizes, sets_id, std, mean, keep_scale, 
         else:
             transform_train_pseudo = Compose(
                 [ToTensor(keep_scale=keep_scale, reverse_channels=reverse_channels),
-                 RandomResize(min_size=input_sizes[0], max_size=input_sizes[1]),
+                 # RandomResize(min_size=input_sizes[0], max_size=input_sizes[1]),
+                 RandomScale(min_scale=0.5, max_scale=1.5),
                  RandomCrop(size=input_sizes[0]),
                  RandomHorizontalFlip(flip_prob=0.5),
                  Normalize(mean=mean, std=std)])
@@ -135,7 +137,9 @@ def init(batch_size, state, split, input_sizes, sets_id, std, mean, keep_scale, 
         workers = 8
         transform_train = Compose(
             [ToTensor(keep_scale=keep_scale, reverse_channels=reverse_channels),
-             RandomResize(min_size=input_sizes[0], max_size=input_sizes[1]),
+             # RandomResize(min_size=input_sizes[0], max_size=input_sizes[1]),
+             Resize(size_image=input_sizes[2], size_label=input_sizes[2]),
+             RandomScale(min_scale=0.5, max_scale=1.5),
              RandomCrop(size=input_sizes[0]),
              RandomHorizontalFlip(flip_prob=0.5),
              Normalize(mean=mean, std=std),
@@ -148,20 +152,19 @@ def init(batch_size, state, split, input_sizes, sets_id, std, mean, keep_scale, 
         else:
             transform_train_pseudo = Compose(
                 [ToTensor(keep_scale=keep_scale, reverse_channels=reverse_channels),
-                 RandomResize(min_size=input_sizes[0], max_size=input_sizes[1]),
+                 # RandomResize(min_size=input_sizes[0], max_size=input_sizes[1]),
+                 Resize(size_image=input_sizes[2], size_label=input_sizes[2]),
+                 RandomScale(min_scale=0.5, max_scale=1.5),
                  RandomCrop(size=input_sizes[0]),
                  RandomHorizontalFlip(flip_prob=0.5),
                  Normalize(mean=mean, std=std)])
-        transform_pseudo = Compose(
-            [ToTensor(keep_scale=keep_scale, reverse_channels=reverse_channels),
-             Resize(size_image=input_sizes[0], size_label=input_sizes[0]),
-             Normalize(mean=mean, std=std),
-             LabelMap(label_id_map_city)])
         transform_test = Compose(
             [ToTensor(keep_scale=keep_scale, reverse_channels=reverse_channels),
              Resize(size_image=input_sizes[2], size_label=input_sizes[2]),
              Normalize(mean=mean, std=std),
              LabelMap(label_id_map_city)])
+        transform_pseudo = transform_test
+        
     else:
         base = ''
 
