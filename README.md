@@ -6,7 +6,7 @@ This repository contains the code for our paper [DST-CBC](https://arxiv.org/abs/
 
 ### 2020.12.7
 
-The bug fix for 2020.12.7 is replacing the random resize operation with random scale and up the Cityscapes fully-supervised learning rate to 0.004. But the performance haven't been tested for the older DST-CBC algorithm so we will not make a new commit to master. For the newest random scale implementation you are encouraged to check out [here](https://github.com/voldemortX/pytorch-auto-drive/blob/cce2c335e90d9000ea65716d388e02def6dfc963/code/transforms/transforms.py#L158). For untested version in DST-CBC, you can check out the **scale** branch.
+The bug fix for 2020.11.9 is replacing the random resize operation with random scale and up the Cityscapes fully-supervised learning rate to 0.004. But the performance haven't been tested for the older DST-CBC algorithm so we will not make a new commit to master. For the newest random scale implementation you are encouraged to check out [here](https://github.com/voldemortX/pytorch-auto-drive/blob/cce2c335e90d9000ea65716d388e02def6dfc963/code/transforms/transforms.py#L158). For untested version in DST-CBC, you can check out the [scale](https://github.com/voldemortX/DST-CBC/tree/scale) branch.
 
 ### 2020.11.9
 ~~Stay tuned for Dynamic Mutual Training (DMT), an updated version of DST-CBC, which has overall better and stabler performance and will be released early November.~~
