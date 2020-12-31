@@ -13,8 +13,8 @@ phases=("1" "2" "3" "4" "5")
 rates=("0.2" "0.4" "0.6" "0.8" "1")
 
 echo baselines
-python main.py --exp-name=${exp_name}__p0--c --val-num-steps=350 --state=2 --epochs=170 --dataset=city --train-set=${train_set} --sets-id=${sid} --continue-from=city_coco_resnet101.pt --coco --mixed-precision --batch-size-labeled=8 --batch-size-pseudo=0 --seed=1
-python main.py --exp-name=${exp_name}__p0--i --val-num-steps=350 --state=2 --epochs=170 --dataset=city --train-set=${train_set} --sets-id=${sid} --mixed-precision --batch-size-labeled=8 --batch-size-pseudo=0 --seed=2
+python main.py --exp-name=${exp_name}__p0--c --val-num-steps=350 --state=2 --epochs=170 --dataset=city --train-set=${train_set} --sets-id=${sid} --continue-from=city_coco_resnet101.pt --coco --mixed-precision --lr=${lr} --batch-size-labeled=8 --batch-size-pseudo=0 --seed=1
+python main.py --exp-name=${exp_name}__p0--i --val-num-steps=350 --state=2 --epochs=170 --dataset=city --train-set=${train_set} --sets-id=${sid} --mixed-precision --lr=${lr} --batch-size-labeled=8 --batch-size-pseudo=0 --seed=2
 
 echo dmt
 for i in ${!rates[@]}; do
