@@ -21,7 +21,7 @@ This folder contains code for the CIFAR-10 image classification experiments for 
 
 ### 1. Set dataset paths:
 
-Set the directory that you want your dataset at [here](https://github.com/voldemortX/DST-CBC/blob/master/classification/generate_splits.sh#L2) and [here](https://github.com/voldemortX/DST-CBC/blob/master/classification/utils/common.py#L16).
+Set the directory that you want your dataset at [here](https://github.com/voldemortX/DST-CBC/blob/master/classification/generate_splits.sh#L2) and [here](https://github.com/voldemortX/DST-CBC/blob/master/classification/utils/common.py#L12).
 
 ### 2. Download and process the dataset:
 
