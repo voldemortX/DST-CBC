@@ -93,13 +93,3 @@ Issues and PRs are most welcomed.
 }
 ```
 
-If for some reason you only want to cite the DST-CBC version:
-
-```
-@article{feng2020semiv1,
-  title={Semi-Supervised Semantic Segmentation via Dynamic Self-Training and Class-Balanced Curriculum},
-  author={Feng, Zhengyang and Zhou, Qianyu and Cheng, Guangliang and Tan, Xin and Shi, Jianping and Ma, Lizhuang},
-  journal={arXiv preprint arXiv:2004.08514v1},
-  year={2020}
-}
-```
