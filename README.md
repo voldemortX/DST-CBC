@@ -1,6 +1,6 @@
 # DMT: Dynamic Mutual Training for Semi-Supervised Learning
 
-This repository contains the code for our paper [DMT](https://arxiv.org/abs/2004.08514), a concise and effective method for semi-supervised semantic segmentation.
+This repository contains the code for our paper [DMT: Dynamic Mutual Training for Semi-Supervised Learning](https://arxiv.org/abs/2004.08514), a concise and effective method for semi-supervised semantic segmentation & image classification.
 
 Some might know it as the previous version **DST-CBC**, or *Semi-Supervised Semantic Segmentation via Dynamic Self-Training and Class-Balanced Curriculum*, if you want the old code, you can check out the [dst-cbc](https://github.com/voldemortX/DST-CBC/tree/dst-cbc) branch.
 
@@ -16,7 +16,7 @@ DMT is released. Happy new year! :wink:
 
 ### 2020.12.7
 
-The bug fix for DST-CBC is release at the [scale](https://github.com/voldemortX/DST-CBC/tree/scale) branch.
+The bug fix for DST-CBC (not fully tested) is released at the [scale](https://github.com/voldemortX/DST-CBC/tree/scale) branch.
 
 ### 2020.11.9
 
@@ -63,33 +63,33 @@ Get started with [CLASSIFICATION.md](CLASSIFICATION.md) for image classification
 ## Understand the code
 We refer interested readers to this repository's [wiki](https://github.com/voldemortX/DST-CBC/wiki). *It is not updated for DMT yet.*
 
-## Acknowledgements
-
-The DeepLabV2 network architecture and coco pre-trained weights are faithfully re-implemented from [AdvSemiSeg](https://github.com/hfslyc/AdvSemiSeg).
-
-The CBC part of the code is adapted from [CRST](https://github.com/yzou2/CRST).
-
-And the overall implementation is based on [TorchVision](https://github.com/pytorch/vision) and [PyTorch](https://github.com/pytorch/pytorch).
-
 ## Notes
-It's best to use a **Turing** or **Volta** architecture GPU when running our code, since they have tensor cores and the computation speed is much faster with mixed precision. For instance, RTX 2080 Ti (which is what we used) or Tesla V100.
+It's best to use a **Turing** or **Volta** architecture GPU when running our code, since they have tensor cores and the computation speed is much faster with mixed precision. For instance, RTX 2080 Ti (which is what we used) or Tesla V100, RTX 20/30 series.
 
 Our implementation is fast and memory efficient. A whole run (train 2 models by DMT on PASCAL VOC 2012) takes about 8 hours on a single RTX 2080 Ti using up to 6GB graphic memory, including on-the-fly evaluations and training baselines. The Cityscapes experiments are even faster.
 
 ## Contact
 
-If you have any questions that are not answerable with Google, feel free to contact us through zyfeng97@outlook.com.
-
 Issues and PRs are most welcomed. 
+
+If you have any questions that are not answerable with Google, feel free to contact us through zyfeng97@outlook.com.
 
 ## Citation
 
 ```
-@article{feng2020semi,
+@article{feng2020dmt,
   title={DMT: Dynamic Mutual Training for Semi-Supervised Learning},
   author={Feng, Zhengyang and Zhou, Qianyu and Gu, Qiqi and Tan, Xin and Cheng, Guangliang and Lu, Xuequan and Shi, Jianping and Ma, Lizhuang},
   journal={arXiv preprint arXiv:2004.08514},
   year={2020}
 }
 ```
+
+## Acknowledgements
+
+The DeepLabV2 network architecture and coco pre-trained weights are faithfully re-implemented from [AdvSemiSeg](https://github.com/hfslyc/AdvSemiSeg).
+
+The CBC part of the older version DST-CBC is adapted from [CRST](https://github.com/yzou2/CRST).
+
+The overall implementation is based on [TorchVision](https://github.com/pytorch/vision) and [PyTorch](https://github.com/pytorch/pytorch).
 
