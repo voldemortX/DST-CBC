@@ -10,6 +10,10 @@ Some might know it as the previous version **DST-CBC**, or *Semi-Supervised Sema
 
 ## News
 
+### 2021.2.10
+
+A slight backbone architecture difference in the segmentation task has just been identified and described in Acknowledgement.
+
 ### 2021.1.1
 
 DMT is released. Happy new year! :wink: 
@@ -87,7 +91,7 @@ If you have any questions that are not answerable with Google, feel free to cont
 
 ## Acknowledgements
 
-The DeepLabV2 network architecture and coco pre-trained weights are faithfully re-implemented from [AdvSemiSeg](https://github.com/hfslyc/AdvSemiSeg).
+The DeepLabV2 network architecture and coco pre-trained weights are faithfully re-implemented from [AdvSemiSeg](https://github.com/hfslyc/AdvSemiSeg). The only difference is we use the so-called ResNetV1.5 implementation for ResNet-101 backbone (same as torchvision), for difference between ResNetV1 and V1.5, refer to [this issue](https://github.com/pytorch/vision/issues/191).
 
 The CBC part of the older version DST-CBC is adapted from [CRST](https://github.com/yzou2/CRST).
 
