@@ -91,7 +91,7 @@ If you have any questions that are not answerable with Google, feel free to cont
 
 ## Acknowledgements
 
-The DeepLabV2 network architecture and coco pre-trained weights are faithfully re-implemented from [AdvSemiSeg](https://github.com/hfslyc/AdvSemiSeg). The only difference is we use the so-called ResNetV1.5 implementation for ResNet-101 backbone (same as torchvision), for difference between ResNetV1 and V1.5, refer to [this issue](https://github.com/pytorch/vision/issues/191).
+The DeepLabV2 network architecture and coco pre-trained weights are faithfully re-implemented from [AdvSemiSeg](https://github.com/hfslyc/AdvSemiSeg). The only difference is we use the so-called ResNetV1.5 implementation for ResNet-101 backbone (same as torchvision), for difference between ResNetV1 and V1.5, refer to [this issue](https://github.com/pytorch/vision/issues/191). However, the difference is reported to only bring 0-0.5% gain in ImageNet, considering we use the V1 COCO pre-trained weights that mismatch with V1.5, the overall performance should remain similar to V1. The better fully-supervised performance mainly comes from better training schedule. Besides, we base comparisons on relative performance to Oracle, not absolute performance.
 
 The CBC part of the older version DST-CBC is adapted from [CRST](https://github.com/yzou2/CRST).
 
