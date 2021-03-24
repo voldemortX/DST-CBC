@@ -51,7 +51,7 @@ The Cityscapes dataset can be downloaded in their [official website](https://www
 When you have done all above procedures and got the datasets, you can prepare the Cityscapes dataset:
 
 ```
-python cityscapes_data_lists.py
+python cityscapes_data_list.py
 ```
 
 Then generate 3 different random splits:
