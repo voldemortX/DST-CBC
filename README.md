@@ -47,7 +47,9 @@ pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cud
 
 ### 2. Install other python packages you may require:
 
-collections, future, matplotlib, numpy, PIL, shutil, tensorboard, tqdm
+```
+pip install future matplotlib tensorboard tqdm
+```
 
 ### 3. Download the code and prepare the scripts:
 
