@@ -5,10 +5,10 @@ sid="1"
 exp_name="dmt-city-8-1"
 ep="10"
 lr="0.004"
-c1="5"
-c2="5"
-i1="5"
-i2="5"
+c1="3"
+c2="3"
+i1="3"
+i2="3"
 phases=("1" "2" "3" "4" "5")
 rates=("0.2" "0.4" "0.6" "0.8" "1")
 
@@ -24,12 +24,12 @@ for i in ${!rates[@]}; do
   python main.py --labeling --dataset=city --train-set=${train_set} --sets-id=${sid} --continue-from=${exp_name}__p${i}--i.pt --mixed-precision --batch-size-labeled=8 --label-ratio=${rates[$i]}
 
   echo training
-  python main.py --exp-name=${exp_name}__p${phases[$i]}--c --dataset=city --train-set=${train_set} --sets-id=${sid} --continue-from=${exp_name}__p${i}--c.pt --coco --mixed-precision --epochs=${ep} --gamma1=${c1} --gamma2=${c2} --lr=${lr} --batch-size-labeled=1 --batch-size-pseudo=7 --seed=1 --val-num-steps=300
+  python main.py --exp-name=${exp_name}__p${phases[$i]}--c --dataset=city --train-set=${train_set} --sets-id=${sid} --continue-from=${exp_name}__p${i}--c.pt --coco --mixed-precision --epochs=${ep} --gamma1=${c1} --gamma2=${c2} --lr=${lr} --batch-size-labeled=2 --batch-size-pseudo=6 --seed=1 --val-num-steps=300
   
   echo labeling
   python main.py --labeling --dataset=city --train-set=${train_set} --sets-id=${sid} --continue-from=${exp_name}__p${i}--c.pt --coco --mixed-precision --batch-size-labeled=8 --label-ratio=${rates[$i]}
 
   echo training
-  python main.py --exp-name=${exp_name}__p${phases[$i]}--i --dataset=city --train-set=${train_set} --sets-id=${sid} --continue-from=${exp_name}__p${i}--i.pt --mixed-precision --epochs=${ep} --gamma1=${i1} --gamma2=${i2} --lr=${lr} --batch-size-labeled=1 --batch-size-pseudo=7 --seed=2 --val-num-steps=300
+  python main.py --exp-name=${exp_name}__p${phases[$i]}--i --dataset=city --train-set=${train_set} --sets-id=${sid} --continue-from=${exp_name}__p${i}--i.pt --mixed-precision --epochs=${ep} --gamma1=${i1} --gamma2=${i2} --lr=${lr} --batch-size-labeled=2 --batch-size-pseudo=6 --seed=2 --val-num-steps=300
         
 done
