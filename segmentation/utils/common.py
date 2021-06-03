@@ -2,9 +2,9 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
-from apex import amp
 import time
 from utils.functional import crop
+from torch.cuda.amp import autocast, GradScaler
 
 # Base directories
 base_voc = '../../voc_seg_deeplab/data/VOCtrainval_11-May-2012/VOCdevkit/VOC2012'
@@ -119,7 +119,7 @@ def save_checkpoint(net, optimizer, lr_scheduler, is_mixed_precision, filename='
         'model': net.state_dict(),
         'optimizer': optimizer.state_dict() if optimizer is not None else None,
         'lr_scheduler': lr_scheduler.state_dict() if lr_scheduler is not None else None,
-        'amp': amp.state_dict() if is_mixed_precision else None
+        # 'amp': amp.state_dict() if is_mixed_precision else None
     }
     torch.save(checkpoint, filename)
 
@@ -132,11 +132,12 @@ def load_checkpoint(net, optimizer, lr_scheduler, is_mixed_precision, filename):
         optimizer.load_state_dict(checkpoint['optimizer'])
     if lr_scheduler is not None:
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
-    if is_mixed_precision and checkpoint['amp'] is not None:
-        amp.load_state_dict(checkpoint['amp'])
+    # if is_mixed_precision and checkpoint['amp'] is not None:
+    #     amp.load_state_dict(checkpoint['amp'])
 
 
-def generate_pseudo_labels(net, device, loader, num_classes, input_size, cbst_thresholds=None):
+def generate_pseudo_labels(net, device, loader, num_classes, input_size, cbst_thresholds=None,
+                           is_mixed_precision=False):
     # Generate pseudo labels and save to disk (negligible time compared with training)
     # Not very sure if there are any cache inconsistency issues (technically this should be fine)
     net.eval()
@@ -151,8 +152,9 @@ def generate_pseudo_labels(net, device, loader, num_classes, input_size, cbst_th
     with torch.no_grad():
         for images, file_name_lists, heights, widths in tqdm(loader):
             images = images.to(device)
-            outputs = net(images)['out']
-            outputs = torch.nn.functional.interpolate(outputs, size=input_size, mode='bilinear', align_corners=True)
+            with autocast(is_mixed_precision):
+                outputs = net(images)['out']
+                outputs = torch.nn.functional.interpolate(outputs, size=input_size, mode='bilinear', align_corners=True)
 
             # Generate pseudo labels (d1 x d2 x 2)
             for i in range(0, len(file_name_lists)):
@@ -180,7 +182,7 @@ def generate_pseudo_labels(net, device, loader, num_classes, input_size, cbst_th
 
 # Reimplemented (all converted to tensor ops) based on yzou2/CRST
 def generate_class_balanced_pseudo_labels(net, device, loader, label_ratio, num_classes, input_size,
-                                          down_sample_rate=16, buffer_size=100):
+                                          down_sample_rate=16, buffer_size=100, is_mixed_precision=False):
     # Max memory usage surge ratio has an upper limit of 2x (caused by array concatenation).
     # Keep a fixed GPU buffer size to achieve a good enough speed-memory trade-off,
     # since casting to cpu is very slow.
@@ -201,8 +203,9 @@ def generate_class_balanced_pseudo_labels(net, device, loader, label_ratio, num_
     with torch.no_grad():
         for images, _, heights, widths in tqdm(loader):
             images = images.to(device)
-            outputs = net(images)['out']
-            outputs = torch.nn.functional.interpolate(outputs, size=input_size, mode='bilinear', align_corners=True)
+            with autocast(is_mixed_precision):
+                outputs = net(images)['out']
+                outputs = torch.nn.functional.interpolate(outputs, size=input_size, mode='bilinear', align_corners=True)
 
             # Generate pseudo labels (d1 x d2) and reassemble
             for i in range(0, len(heights)):
@@ -246,4 +249,4 @@ def generate_class_balanced_pseudo_labels(net, device, loader, label_ratio, num_
 
     print(kc)
     return generate_pseudo_labels(net=net, device=device, loader=loader, cbst_thresholds=torch.tensor(kc),
-                                  input_size=input_size, num_classes=num_classes)
+                                  input_size=input_size, num_classes=num_classes, is_mixed_precision=is_mixed_precision)
