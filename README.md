@@ -38,22 +38,16 @@ Also, thanks to [**@lorenmt**](https://github.com/lorenmt), a data augmentation 
 
 You'll need a CUDA 10, Python3 environment (best on Linux) with PyTorch 1.2.0, TorchVision 0.4.0 and Apex to run the code in this repo.
 
-### 1. Setup the exact version of Apex & PyTorch & TorchVision for mixed precision training:
+### 1. Setup PyTorch & TorchVision:
 
 ```
-pip install https://download.pytorch.org/whl/cu100/torch-1.2.0-cp36-cp36m-manylinux1_x86_64.whl && pip install https://download.pytorch.org/whl/cu100/torchvision-0.4.0-cp36-cp36m-manylinux1_x86_64.whl
-git clone https://github.com/NVIDIA/apex
-cd apex
-pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./
+pip install torch==1.6.0 torchvision==0.7.0
 ```
-!There seems to be an issue of apex installations from the official repo sometimes. If you encounter errors, we suggest you use our stored older apex [codes](https://drive.google.com/open?id=1x8enpvdTTZ3RChf17XvcLdSYulUPg3sR).
-
-**PyTorch 1.6** now includes automatic mixed precision at apex level "O1". We probably will update this repo accordingly in the future. 
 
 ### 2. Install other python packages you may require:
 
 ```
-pip install future matplotlib tensorboard tqdm
+pip install packages accelerate future matplotlib tensorboard tqdm
 ```
 
 ### 3. Download the code and prepare the scripts:
