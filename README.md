@@ -10,6 +10,11 @@ Some might know it as the previous version **DST-CBC**, or *Semi-Supervised Sema
 
 ## News
 
+### 2021.6.3
+
+**Multi-GPU** training support (based on [Accelerate](https://github.com/huggingface/accelerate)) is added, and the whole project is updated to PyTorch 1.6.
+Thanks to the codes & testing by [**@jinhuan-hit**](https://github.com/jinhuan-hit), and discussions from [**@lorenmt**](https://github.com/lorenmt), [**@TiankaiHang**](https://github.com/TiankaiHang).
+
 ### 2021.2.10
 
 A slight backbone architecture difference in the segmentation task has just been identified and described in Acknowledgement.
