@@ -396,7 +396,7 @@ if __name__ == '__main__':
     # device = torch.device('cpu')
     # if torch.cuda.is_available():
     #     device = torch.device('cuda:0')
-    accelerator = Accelerator()
+    accelerator = Accelerator(split_batches=True)
     device = accelerator.device
     if args.coco:  # This Caffe pre-trained model takes "inhuman" mean/std & input format
         mean = coco_mean
