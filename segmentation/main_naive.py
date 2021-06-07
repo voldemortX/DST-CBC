@@ -14,11 +14,12 @@ from utils.datasets import StandardSegmentationDataset
 from utils.transforms import ToTensor, Normalize, RandomHorizontalFlip, RandomCrop, RandomResize, Resize, LabelMap, \
     ZeroPad, Compose, RandomScale
 from torch.utils.tensorboard import SummaryWriter
-from apex import amp
 from utils.common import colors_city, colors_voc, categories_voc, categories_city, sizes_city, sizes_voc, \
     num_classes_voc, num_classes_city, coco_mean, coco_std, imagenet_mean, imagenet_std, ConfusionMatrix, \
     load_checkpoint, save_checkpoint, generate_class_balanced_pseudo_labels, base_city, base_voc, label_id_map_city
 from utils.losses import DynamicNaiveLoss as DynamicMutualLoss
+from accelerate import Accelerator
+from torch.cuda.amp import autocast, GradScaler
 
 
 def init(batch_size_labeled, batch_size_pseudo, state, split, input_sizes, sets_id, std, mean,
@@ -169,6 +170,9 @@ def train(writer, loader_c, loader_sup, validation_loader, device, criterion, ne
     if with_sup:
         iter_sup = iter(loader_sup)
 
+    if is_mixed_precision:
+        scaler = GradScaler()
+
     # Training
     running_stats = {'disagree': -1, 'current_win': -1, 'avg_weights': 1.0, 'loss': 0.0}
     while epoch < num_epochs:
@@ -202,22 +206,23 @@ def train(writer, loader_c, loader_sup, validation_loader, device, criterion, ne
             inputs = inputs.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
-            outputs = net(inputs)['out']
-            outputs = torch.nn.functional.interpolate(outputs, size=input_sizes[0], mode='bilinear', align_corners=True)
-            conf_mat.update(labels.flatten(), outputs.argmax(1).flatten())
+            with autocast(is_mixed_precision):
+                outputs = net(inputs)['out']
+                outputs = torch.nn.functional.interpolate(outputs, size=input_sizes[0], mode='bilinear', align_corners=True)
+                conf_mat.update(labels.flatten(), outputs.argmax(1).flatten())
 
-            if with_sup:
-                loss, stats = criterion(outputs, probs, inputs_c.shape[0])
-            else:
-                loss, stats = criterion(outputs, labels)
+                if with_sup:
+                    loss, stats = criterion(outputs, probs, inputs_c.shape[0])
+                else:
+                    loss, stats = criterion(outputs, labels)
 
             if is_mixed_precision:
-                # 2/3 & 3/3 of mixed precision training with amp
-                with amp.scale_loss(loss, optimizer) as scaled_loss:
-                    scaled_loss.backward()
+                accelerator.backward(scaler.scale(loss))
+                scaler.step(optimizer)
+                scaler.update()
             else:
-                loss.backward()
-            optimizer.step()
+                accelerator.backward(loss)
+                optimizer.step()
             lr_scheduler.step()
 
             # Logging
@@ -235,10 +240,11 @@ def train(writer, loader_c, loader_sup, validation_loader, device, criterion, ne
             # Validate and find the best snapshot
             if current_step_num % val_num_steps == (val_num_steps - 1) or \
                 current_step_num == num_epochs * len(loader_c) - 1:
-                # A bug in Apex? https://github.com/NVIDIA/apex/issues/706
+                # Apex bug https://github.com/NVIDIA/apex/issues/706, fixed in PyTorch1.6, kept here for BC
                 test_pixel_accuracy, test_mIoU = test_one_set(loader=validation_loader, device=device, net=net,
                                                               num_classes=num_classes, categories=categories,
-                                                              output_size=input_sizes[2])
+                                                              output_size=input_sizes[2],
+                                                              is_mixed_precision=is_mixed_precision)
                 writer.add_scalar(tensorboard_prefix + 'test pixel accuracy',
                                   test_pixel_accuracy,
                                   current_step_num)
@@ -282,16 +288,17 @@ def train(writer, loader_c, loader_sup, validation_loader, device, criterion, ne
 
 
 # Copied and modified from torch/vision/references/segmentation
-def test_one_set(loader, device, net, categories, num_classes, output_size):
+def test_one_set(loader, device, net, categories, num_classes, output_size, is_mixed_precision):
     # Evaluate on 1 data_loader (cudnn impact < 0.003%)
     net.eval()
     conf_mat = ConfusionMatrix(num_classes)
     with torch.no_grad():
         for image, target in tqdm(loader):
             image, target = image.to(device), target.to(device)
-            output = net(image)['out']
-            output = torch.nn.functional.interpolate(output, size=output_size, mode='bilinear', align_corners=True)
-            conf_mat.update(target.flatten(), output.argmax(1).flatten())
+            with autocast(is_mixed_precision):
+                output = net(image)['out']
+                output = torch.nn.functional.interpolate(output, size=output_size, mode='bilinear', align_corners=True)
+                conf_mat.update(target.flatten(), output.argmax(1).flatten())
 
     acc_global, acc, iu = conf_mat.compute()
     print(categories)
@@ -327,7 +334,7 @@ def after_loading():
 
 if __name__ == '__main__':
     # Settings
-    parser = argparse.ArgumentParser(description='PyTorch 1.2.0 && torchvision 0.4.0')
+    parser = argparse.ArgumentParser(description='PyTorch 1.6.0 && torchvision 0.7.0')
     parser.add_argument('--exp-name', type=str, default='auto',
                         help='Name of the experiment (default: auto)')
     parser.add_argument('--dataset', type=str, default='voc',
@@ -385,9 +392,11 @@ if __name__ == '__main__':
         exp_name = args.exp_name
     with open(exp_name + '_cfg.txt', 'w') as f:
         f.write(str(vars(args)))
-    device = torch.device('cpu')
-    if torch.cuda.is_available():
-        device = torch.device('cuda:0')
+    # device = torch.device('cpu')
+    # if torch.cuda.is_available():
+    #     device = torch.device('cuda:0')
+    accelerator = Accelerator(split_batches=True)
+    device = accelerator.device
     if args.coco:  # This Caffe pre-trained model takes "inhuman" mean/std & input format
         mean = coco_mean
         std = coco_std
@@ -423,8 +432,6 @@ if __name__ == '__main__':
     ]
 
     optimizer = torch.optim.SGD(params_to_optimize, lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-    if args.mixed_precision:
-        net, optimizer = amp.initialize(net, optimizer, opt_level='O1')
 
     # Just to be safe (a little bit more memory, by all means, save it to disk if you want)
     if args.state == 1:
@@ -432,6 +439,7 @@ if __name__ == '__main__':
 
     # Testing
     if args.state == 3:
+        net, optimizer = accelerator.prepare(net, optimizer)
         test_loader = init(batch_size_labeled=args.batch_size_labeled, batch_size_pseudo=args.batch_size_pseudo,
                            state=3, split=None, valtiny=args.valtiny, no_aug=args.no_aug,
                            input_sizes=input_sizes, data_set=args.dataset, sets_id=args.sets_id,
@@ -439,7 +447,7 @@ if __name__ == '__main__':
         load_checkpoint(net=net, optimizer=None, lr_scheduler=None,
                         is_mixed_precision=args.mixed_precision, filename=args.continue_from)
         test_one_set(loader=test_loader, device=device, net=net, categories=categories, num_classes=num_classes,
-                     output_size=input_sizes[2])
+                     output_size=input_sizes[2], is_mixed_precision=args.mixed_precision)
     else:
         x = 0
         criterion = DynamicMutualLoss(ignore_index=255)
@@ -455,6 +463,7 @@ if __name__ == '__main__':
                                               mean=mean, std=std, keep_scale=keep_scale, no_aug=args.no_aug,
                                               reverse_channels=reverse_channels)
             after_loading()
+            net, optimizer, labeled_loader = accelerator.prepare(net, optimizer, labeled_loader)
             x = train(writer=writer, loader_c=labeled_loader, loader_sup=None, validation_loader=val_loader,
                       device=device, criterion=criterion, net=net, optimizer=optimizer,
                       lr_scheduler=lr_scheduler,
@@ -471,6 +480,7 @@ if __name__ == '__main__':
                     state=0, split=args.train_set, input_sizes=input_sizes,
                     sets_id=args.sets_id, mean=mean, std=std, keep_scale=keep_scale, reverse_channels=reverse_channels)
                 after_loading()
+                net, optimizer = accelerator.prepare(net, optimizer)
                 time_now = time.time()
                 ratio = generate_class_balanced_pseudo_labels(net=net, device=device, loader=unlabeled_loader,
                                                               input_size=input_sizes[2],
@@ -484,6 +494,9 @@ if __name__ == '__main__':
                     state=1, split=args.train_set, input_sizes=input_sizes,
                     sets_id=args.sets_id, mean=mean, std=std, keep_scale=keep_scale, reverse_channels=reverse_channels)
                 after_loading()
+                net, optimizer, labeled_loader, pseudo_labeled_loader = accelerator.prepare(net, optimizer,
+                                                                                            labeled_loader,
+                                                                                            pseudo_labeled_loader)
                 x = train(writer=writer, loader_c=pseudo_labeled_loader, loader_sup=labeled_loader,
                           validation_loader=val_loader, lr_scheduler=lr_scheduler,
                           device=device, criterion=criterion, net=net, optimizer=optimizer,

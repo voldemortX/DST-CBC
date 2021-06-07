@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import time
 from utils.functional import crop
-from torch.cuda.amp import autocast, GradScaler
+from torch.cuda.amp import autocast
 
 # Base directories
 base_voc = '../../voc_seg_deeplab/data/VOCtrainval_11-May-2012/VOCdevkit/VOC2012'

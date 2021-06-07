@@ -241,7 +241,7 @@ def train(writer, loader_c, loader_sup, validation_loader, device, criterion, ne
             # Validate and find the best snapshot
             if current_step_num % val_num_steps == (val_num_steps - 1) or \
                 current_step_num == num_epochs * len(loader_c) - 1:
-                # A bug in Apex? https://github.com/NVIDIA/apex/issues/706
+                # Apex bug https://github.com/NVIDIA/apex/issues/706, fixed in PyTorch1.6, kept here for BC
                 test_pixel_accuracy, test_mIoU = test_one_set(loader=validation_loader, device=device, net=net,
                                                               num_classes=num_classes, categories=categories,
                                                               output_size=input_sizes[2],
@@ -335,7 +335,7 @@ def after_loading():
 
 if __name__ == '__main__':
     # Settings
-    parser = argparse.ArgumentParser(description='PyTorch 1.2.0 && torchvision 0.4.0')
+    parser = argparse.ArgumentParser(description='PyTorch 1.6.0 && torchvision 0.7.0')
     parser.add_argument('--exp-name', type=str, default='auto',
                         help='Name of the experiment (default: auto)')
     parser.add_argument('--dataset', type=str, default='voc',
