@@ -4,7 +4,7 @@ This repository contains the code for our paper [DMT: Dynamic Mutual Training fo
 
 Some might know it as the previous version **DST-CBC**, or *Semi-Supervised Semantic Segmentation via Dynamic Self-Training and Class-Balanced Curriculum*, if you want the old code, you can check out the [dst-cbc](https://github.com/voldemortX/DST-CBC/tree/dst-cbc) branch.
 
-Also, for older PyTorch version (<1.6.0) users, or the **exact** same environment that produced the paper's results, refer to 53853f6.
+Also, for older PyTorch version (<1.6.0) users, or the **exact** same environment that produced the paper's results, refer to [53853f6](https://github.com/voldemortX/DST-CBC/tree/53853f63033fdb88206828a72d960de2c03efd69).
 
 <div align="center">
   <img src="overview.png"/>
