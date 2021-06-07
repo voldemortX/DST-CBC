@@ -97,6 +97,14 @@ ImageNet pre-trained weights will be automatically downloaded when running code.
 
 ## Run the code
 
+For multi-GPU/TPU/Distributed machine users, first run:
+
+```
+accelerate config
+```
+
+More details can be found at [Accelerate](https://github.com/huggingface/accelerate). Note that the mixed precision config cannot be used, you should still use `--mixed-precision` for that.
+
 We provide examples in scripts and commands. Final results can be found at log.txt after training.
 
 For example, run DMT with different pre-trained weights:
@@ -120,8 +128,8 @@ python pascal_sbd_split.py
 ```
 
 
-Of course you'll need to run 3 times average to determine performance by changing the *sid* parameter (we used 0,1,2) in shell scripts.
+Of course you'll need to run 3 times average to determine performance by changing the `sid` parameter (we used 0,1,2) in shell scripts.
 
 We also provide scripts for ablations, be sure to run *abl_baseline.sh* first. 
 
-For small validation set, use *--valtiny*.
+For small validation set, use `--valtiny`.

@@ -7,7 +7,6 @@ import numpy as np
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.transforms import Compose, RandomCrop, RandomHorizontalFlip, Normalize, ToTensor
-from apex import amp
 from utils.randomrandaugment import RandomRandAugment
 from models.wideresnet import wrn_28_2
 from utils.common import num_classes_cifar10, mean_cifar10, std_cifar10, input_sizes_cifar10, base_cifar10, \
@@ -16,6 +15,8 @@ from utils.cutout import Cutout
 from utils.autoaugment import CIFAR10Policy
 from utils.datasets import CIFAR10
 from utils.mixup import mixup_criterion, mixup_data
+from accelerate import Accelerator
+from torch.cuda.amp import autocast, GradScaler
 
 
 def init(batch_size, state, mean, std, input_sizes, base, num_workers, train_set, val_set, rand_augment=True,
@@ -88,6 +89,9 @@ def train(writer, train_loader, val_loader, device, criterion, net, optimizer, l
     if val_num_steps is None:
         val_num_steps = len(train_loader)
 
+    if is_mixed_precision:
+        scaler = GradScaler()
+
     net.train()
 
     # Use EMA to report final performance instead of select best checkpoint with valtiny
@@ -112,7 +116,8 @@ def train(writer, train_loader, val_loader, device, criterion, net, optimizer, l
             if alpha is not None:
                 inputs, labels_a, labels_b, lam = mixup_data(x=inputs, y=labels, alpha=alpha)
 
-            outputs = net(inputs)
+            with autocast(is_mixed_precision):
+                outputs = net(inputs)
 
             if alpha is not None:
                 # Pseudo training accuracy & interesting loss
@@ -125,12 +130,12 @@ def train(writer, train_loader, val_loader, device, criterion, net, optimizer, l
                 loss = criterion(outputs, labels)
 
             if is_mixed_precision:
-                # 2/3 & 3/3 of mixed precision training with amp
-                with amp.scale_loss(loss, optimizer) as scaled_loss:
-                    scaled_loss.backward()
+                accelerator.backward(scaler.scale(loss))
+                scaler.step(optimizer)
+                scaler.update()
             else:
-                loss.backward()
-            optimizer.step()
+                accelerator.backward(loss)
+                optimizer.step()
             if lr_scheduler is not None:
                 lr_scheduler.step()
 
@@ -150,8 +155,9 @@ def train(writer, train_loader, val_loader, device, criterion, net, optimizer, l
             # Validate and find the best snapshot
             if current_step_num % val_num_steps == (val_num_steps - 1) or \
                current_step_num == num_epochs * len(train_loader) - 1:
-                # A bug in Apex? https://github.com/NVIDIA/apex/issues/706
-                test_acc = test(loader=val_loader, device=device, net=net, fine_grain=fine_grain)
+                # Apex bug https://github.com/NVIDIA/apex/issues/706, fixed in PyTorch1.6, kept here for BC
+                test_acc = test(loader=val_loader, device=device, net=net, fine_grain=fine_grain,
+                                is_mixed_precision=is_mixed_precision)
                 writer.add_scalar('test accuracy',
                                   test_acc,
                                   current_step_num)
@@ -180,7 +186,7 @@ def train(writer, train_loader, val_loader, device, criterion, net, optimizer, l
     return best_acc
 
 
-def test(loader, device, net, fine_grain=False):
+def test(loader, device, net, fine_grain=False, is_mixed_precision=False):
     # Evaluate
     net.eval()
     test_correct = 0
@@ -189,7 +195,8 @@ def test(loader, device, net, fine_grain=False):
     with torch.no_grad():
         for image, target in tqdm(loader):
             image, target = image.to(device), target.to(device)
-            output = net(image)
+            with autocast(is_mixed_precision):
+                output = net(image)
             test_all += target.shape[0]
             if fine_grain:
                 predictions = output.softmax(1)
@@ -213,7 +220,7 @@ def test(loader, device, net, fine_grain=False):
 
 if __name__ == '__main__':
     # Settings
-    parser = argparse.ArgumentParser(description='PyTorch 1.2.0 && torchvision 0.4.0')
+    parser = argparse.ArgumentParser(description='PyTorch 1.6.0 && torchvision 0.7.0')
     parser.add_argument('--exp-name', type=str, default='auto',
                         help='Name of the experiment (default: auto)')
     parser.add_argument('--dataset', type=str, default='cifar10',
@@ -269,9 +276,11 @@ if __name__ == '__main__':
     # torch.backends.cudnn.benchmark = False  # Might hurt performance
     if args.exp_name != 'auto':
         exp_name = args.exp_name
-    device = torch.device('cpu')
-    if torch.cuda.is_available():
-        device = torch.device('cuda:0')
+    # device = torch.device('cpu')
+    # if torch.cuda.is_available():
+    #     device = torch.device('cuda:0')
+    accelerator = Accelerator(split_batches=True)
+    device = accelerator.device
     if args.valtiny:
         val_set = 'valtiny_seed1'
     else:
@@ -293,16 +302,16 @@ if __name__ == '__main__':
     params_to_optimize = net.parameters()
     optimizer = torch.optim.SGD(params_to_optimize, lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
     # optimizer = torch.optim.Adam(params_to_optimize, lr=args.lr, weight_decay=args.weight_decay)
-    if args.mixed_precision:
-        net, optimizer = amp.initialize(net, optimizer, opt_level='O1')
 
     # Testing
     if args.state == 2:
+        net, optimizer = accelerator.prepare(net, optimizer)
         test_loader = init(batch_size=args.batch_size, state=2, mean=mean, std=std, train_set=None, val_set=val_set,
                            input_sizes=input_sizes, base=base, num_workers=args.num_workers, dataset=args.dataset)
         load_checkpoint(net=net, optimizer=None, lr_scheduler=None,
                         is_mixed_precision=args.mixed_precision, filename=args.continue_from)
-        x = test(loader=test_loader, device=device, net=net, fine_grain=args.fine_grain)
+        x = test(loader=test_loader, device=device, net=net, fine_grain=args.fine_grain,
+                 is_mixed_precision=args.mixed_precision)
         with open(args.log + '.txt', 'a') as f:
             f.write('test: ' + str(x) + '\n')
 
@@ -315,6 +324,7 @@ if __name__ == '__main__':
                                         train_set=args.train_set, val_set=val_set, n=args.n, m=args.m,
                                         rand_augment=args.ra,
                                         input_sizes=input_sizes, num_workers=args.num_workers, dataset=args.dataset)
+        net, optimizer, train_loader = accelerator.prepare(net, optimizer, train_loader)
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer,
                                                                   T_max=args.epochs * len(train_loader))
         # lr_scheduler = None

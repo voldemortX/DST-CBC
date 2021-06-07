@@ -1,9 +1,11 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from apex import amp
 from tqdm import tqdm
 import collections
+from accelerate import Accelerator
+from torch.cuda.amp import autocast
+
 
 mean_cifar10 = [0.49137, 0.48235, 0.44667]
 std_cifar10 = [0.24706, 0.24353, 0.26157]
@@ -49,7 +51,7 @@ def load_checkpoint(net, optimizer, lr_scheduler, is_mixed_precision, filename):
 
 
 # Count for threshold (k) to select top confident labels
-def rank_label_confidence(net, device, loader, ratio, num_images):
+def rank_label_confidence(net, device, loader, ratio, num_images, is_mixed_precision):
     net.eval()
     if ratio >= 1:
         k = 0
@@ -61,9 +63,10 @@ def rank_label_confidence(net, device, loader, ratio, num_images):
             for images, _ in tqdm(loader):
                 # Inference
                 images = images.to(device)
-                outputs = net(images)
-                temp = torch.nn.functional.softmax(input=outputs, dim=1)  # ! softmax
-                pseudo_probabilities = temp.max(dim=1).values
+                with autocast(is_mixed_precision):
+                    outputs = net(images)
+                    temp = torch.nn.functional.softmax(input=outputs, dim=1)  # ! softmax
+                    pseudo_probabilities = temp.max(dim=1).values
                 temp_len = pseudo_probabilities.shape[0]
 
                 # Count
