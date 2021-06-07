@@ -4,6 +4,8 @@ This repository contains the code for our paper [DMT: Dynamic Mutual Training fo
 
 Some might know it as the previous version **DST-CBC**, or *Semi-Supervised Semantic Segmentation via Dynamic Self-Training and Class-Balanced Curriculum*, if you want the old code, you can check out the [dst-cbc](https://github.com/voldemortX/DST-CBC/tree/dst-cbc) branch.
 
+Also, for older PyTorch version (<1.6.0) users, or the **exact** same environment that produced the paper's results, refer to 53853f6.
+
 <div align="center">
   <img src="overview.png"/>
 </div>
@@ -12,7 +14,7 @@ Some might know it as the previous version **DST-CBC**, or *Semi-Supervised Sema
 
 ### 2021.6.7
 
-**Multi-GPU** training support (based on [Accelerate](https://github.com/huggingface/accelerate)) is added, and the whole project is updated to PyTorch 1.6.
+**Multi-GPU** training support (based on [Accelerate](https://github.com/huggingface/accelerate)) is added, and the whole project is upgraded to PyTorch 1.6.
 Thanks to the codes & testing by [**@jinhuan-hit**](https://github.com/jinhuan-hit), and discussions from [**@lorenmt**](https://github.com/lorenmt), [**@TiankaiHang**](https://github.com/TiankaiHang).
 
 ### 2021.2.10
