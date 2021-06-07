@@ -34,7 +34,15 @@ The CIFAR-10 dataset can be downloaded and splitted to 5 random splits and valid
 
 ## Run the code
 
-We provide examples in scripts and commands. Final results can be found at log.txt after training.
+For multi-GPU/TPU/Distributed machine users, first run:
+
+```
+accelerate config
+```
+
+More details can be found at [Accelerate](https://github.com/huggingface/accelerate). Note that the mixed precision config cannot be used, you should still use `--mixed-precision` for that.
+
+We provide examples in scripts and commands. Final results can be found at `log.txt` after training.
 
 For example, with 1000 labels, to compare CL and DMT in a controlled experiment with same baseline model to start training:
 
@@ -43,6 +51,6 @@ For example, with 1000 labels, to compare CL and DMT in a controlled experiment 
 ./ss-dmt-full-1.sh
 ```
 
-Of course you'll need to run 5 times average to determine performance by changing the *seed* parameter (we used 1,2,3,4,5) in shell scripts.
+You'll need to run 5 times average to determine performance by changing the `seed` parameter (we used 1,2,3,4,5) in shell scripts.
 
-For small validation set, use *--valtiny*; for fine-grained testing, use *--fine-grain*.
+For small validation set, use `--valtiny`; for fine-grained testing, use `--fine-grain`.

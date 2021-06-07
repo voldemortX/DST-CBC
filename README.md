@@ -10,7 +10,7 @@ Some might know it as the previous version **DST-CBC**, or *Semi-Supervised Sema
 
 ## News
 
-### 2021.6.3
+### 2021.6.7
 
 **Multi-GPU** training support (based on [Accelerate](https://github.com/huggingface/accelerate)) is added, and the whole project is updated to PyTorch 1.6.
 Thanks to the codes & testing by [**@jinhuan-hit**](https://github.com/jinhuan-hit), and discussions from [**@lorenmt**](https://github.com/lorenmt), [**@TiankaiHang**](https://github.com/TiankaiHang).
@@ -36,7 +36,7 @@ Also, thanks to [**@lorenmt**](https://github.com/lorenmt), a data augmentation 
 
 ## Setup
 
-You'll need a CUDA 10, Python3 environment (best on Linux) with PyTorch 1.2.0, TorchVision 0.4.0 and Apex to run the code in this repo.
+First, you'll need a CUDA 10, Python3 environment (best on Linux).
 
 ### 1. Setup PyTorch & TorchVision:
 
@@ -47,7 +47,7 @@ pip install torch==1.6.0 torchvision==0.7.0
 ### 2. Install other python packages you may require:
 
 ```
-pip install packages accelerate future matplotlib tensorboard tqdm
+pip install packaging accelerate future matplotlib tensorboard tqdm
 ```
 
 ### 3. Download the code and prepare the scripts:
@@ -66,9 +66,11 @@ Get started with [SEGMENTATION.md](SEGMENTATION.md) for semantic segmentation.
 Get started with [CLASSIFICATION.md](CLASSIFICATION.md) for image classification.
 
 ## Understand the code
+
 We refer interested readers to this repository's [wiki](https://github.com/voldemortX/DST-CBC/wiki). *It is not updated for DMT yet.*
 
 ## Notes
+
 It's best to use a **Turing** or **Volta** architecture GPU when running our code, since they have tensor cores and the computation speed is much faster with mixed precision. For instance, RTX 2080 Ti (which is what we used) or Tesla V100, RTX 20/30 series.
 
 Our implementation is fast and memory efficient. A whole run (train 2 models by DMT on PASCAL VOC 2012) takes about 8 hours on a single RTX 2080 Ti using up to 6GB graphic memory, including on-the-fly evaluations and training baselines. The Cityscapes experiments are even faster.
@@ -98,3 +100,4 @@ The CBC part of the older version DST-CBC is adapted from [CRST](https://github.
 
 The overall implementation is based on [TorchVision](https://github.com/pytorch/vision) and [PyTorch](https://github.com/pytorch/pytorch).
 
+The people who've helped to make the method & code better: [**lorenmt**](https://github.com/lorenmt), [**jinhuan-hit**](https://github.com/jinhuan-hit), [**TiankaiHang**](https://github.com/TiankaiHang), etc.
