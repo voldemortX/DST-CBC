@@ -7,7 +7,6 @@ import pickle
 import numpy as np
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
-from apex import amp
 from models.wideresnet import wrn_28_2
 from utils.common import num_classes_cifar10, mean_cifar10, std_cifar10, input_sizes_cifar10, base_cifar10, \
     load_checkpoint, save_checkpoint, EMA, rank_label_confidence
@@ -18,6 +17,8 @@ from torchvision.transforms import Compose, RandomCrop, RandomHorizontalFlip, No
 from utils.randomrandaugment import RandomRandAugment
 from utils.cutout import Cutout
 from utils.autoaugment import CIFAR10Policy
+from accelerate import Accelerator
+from torch.cuda.amp import autocast, GradScaler
 
 
 def get_transforms(auto_augment, input_sizes, m, mean, n, std):
@@ -48,8 +49,9 @@ def get_transforms(auto_augment, input_sizes, m, mean, n, std):
     return test_transforms, train_transforms
 
 
-def generate_pseudo_labels(net, device, loader, label_ratio, num_images, filename):
-    k = rank_label_confidence(net=net, device=device, loader=loader, ratio=label_ratio, num_images=num_images)
+def generate_pseudo_labels(net, device, loader, label_ratio, num_images, filename, is_mixed_precision):
+    k = rank_label_confidence(net=net, device=device, loader=loader, ratio=label_ratio, num_images=num_images,
+                              is_mixed_precision=is_mixed_precision)
     print(k)
     # 1 forward pass (build pickle file)
     selected_files = None
@@ -59,9 +61,10 @@ def generate_pseudo_labels(net, device, loader, label_ratio, num_images, filenam
         for images, original_file in tqdm(loader):
             # Inference
             images = images.to(device)
-            outputs = net(images)
-            temp = torch.nn.functional.softmax(input=outputs, dim=-1)  # ! softmax
-            pseudo_probabilities = temp.max(dim=-1).values
+            with autocast(is_mixed_precision):
+                outputs = net(images)
+                temp = torch.nn.functional.softmax(input=outputs, dim=-1)  # ! softmax
+                pseudo_probabilities = temp.max(dim=-1).values
 
             # Select
             temp_predictions = temp[pseudo_probabilities > k].cpu().numpy()
@@ -110,7 +113,7 @@ def init(mean, std, input_sizes, base, num_workers, prefix, val_set, train, batc
     return labeled_loader, unlabeled_loader, pseudo_labeled_loader, val_loader, unlabeled_set.__len__()
 
 
-def test(loader, device, net, fine_grain=False):
+def test(loader, device, net, fine_grain=False, is_mixed_precision=False):
     # Evaluate
     net.eval()
     test_correct = 0
@@ -119,7 +122,8 @@ def test(loader, device, net, fine_grain=False):
     with torch.no_grad():
         for image, target in tqdm(loader):
             image, target = image.to(device), target.to(device)
-            output = net(image)
+            with autocast(is_mixed_precision):
+                output = net(image)
             test_all += target.shape[0]
             if fine_grain:
                 predictions = output.softmax(1)
@@ -153,6 +157,9 @@ def train(writer, labeled_loader, pseudo_labeled_loader, val_loader, device, cri
         loss_num_steps = min_len
     if val_num_steps is None:
         val_num_steps = min_len
+
+    if is_mixed_precision:
+        scaler = GradScaler()
 
     net.train()
 
@@ -203,7 +210,8 @@ def train(writer, labeled_loader, pseudo_labeled_loader, val_loader, device, cri
                     split_index=inputs_pseudo.shape[0], labeled_weight=labeled_weight)
                 inputs, dynamic_weights, labels_a, labels_b, lam = mixup_data(x=inputs, w=dynamic_weights, y=labels,
                                                                               alpha=alpha, keep_max=True)
-            outputs = net(inputs)
+            with autocast(is_mixed_precision):
+                outputs = net(inputs)
 
             if alpha != -1:
                 # Pseudo training accuracy & interesting loss
@@ -218,12 +226,12 @@ def train(writer, labeled_loader, pseudo_labeled_loader, val_loader, device, cri
                                                    gamma1=gamma1, gamma2=gamma2)
 
             if is_mixed_precision:
-                # 2/3 & 3/3 of mixed precision training with amp
-                with amp.scale_loss(loss, optimizer) as scaled_loss:
-                    scaled_loss.backward()
+                accelerator.backward(scaler.scale(loss))
+                scaler.step(optimizer)
+                scaler.update()
             else:
-                loss.backward()
-            optimizer.step()
+                accelerator.backward(loss)
+                optimizer.step()
             criterion.step()
             if lr_scheduler is not None:
                 lr_scheduler.step()
@@ -252,8 +260,9 @@ def train(writer, labeled_loader, pseudo_labeled_loader, val_loader, device, cri
             # Validate and find the best snapshot
             if current_step_num % val_num_steps == (val_num_steps - 1) or \
                current_step_num == num_epochs * len(pseudo_labeled_loader) - 1:
-                # A bug in Apex? https://github.com/NVIDIA/apex/issues/706
-                test_acc = test(loader=val_loader, device=device, net=net, fine_grain=fine_grain)
+                # Apex bug https://github.com/NVIDIA/apex/issues/706, fixed in PyTorch1.6, kept here for BC
+                test_acc = test(loader=val_loader, device=device, net=net, fine_grain=fine_grain,
+                                is_mixed_precision=is_mixed_precision)
                 writer.add_scalar(tensorboard_prefix + 'test accuracy',
                                   test_acc,
                                   current_step_num)
@@ -284,7 +293,7 @@ def train(writer, labeled_loader, pseudo_labeled_loader, val_loader, device, cri
 
 if __name__ == '__main__':
     # Settings
-    parser = argparse.ArgumentParser(description='PyTorch 1.2.0 && torchvision 0.4.0')
+    parser = argparse.ArgumentParser(description='PyTorch 1.6.0 && torchvision 0.7.0')
     parser.add_argument('--exp-name', type=str, default='auto',
                         help='Name of the experiment (default: auto)')
     parser.add_argument('--dataset', type=str, default='cifar10',
@@ -350,9 +359,11 @@ if __name__ == '__main__':
     # torch.backends.cudnn.benchmark = False  # Might hurt performance
     if args.exp_name != 'auto':
         exp_name = args.exp_name
-    device = torch.device('cpu')
-    if torch.cuda.is_available():
-        device = torch.device('cuda:0')
+    # device = torch.device('cpu')
+    # if torch.cuda.is_available():
+    #     device = torch.device('cuda:0')
+    accelerator = Accelerator(split_batches=True)
+    device = accelerator.device
     if args.valtiny:
         val_set = 'valtiny_seed1'
     else:
@@ -373,8 +384,6 @@ if __name__ == '__main__':
     params_to_optimize = net.parameters()
     optimizer = torch.optim.SGD(params_to_optimize, lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
     # optimizer = torch.optim.Adam(params_to_optimize, lr=args.lr, weight_decay=args.weight_decay)
-    if args.mixed_precision:
-        net, optimizer = amp.initialize(net, optimizer, opt_level='O1')
 
     if args.continue_from is not None:
         load_checkpoint(net=net, optimizer=None, lr_scheduler=None,
@@ -385,13 +394,18 @@ if __name__ == '__main__':
         dataset=args.dataset, n=args.n, m=args.m, auto_augment=args.aa, input_sizes=input_sizes, std=std,
         num_workers=args.num_workers, batch_size_pseudo=args.batch_size_pseudo, train=False if args.labeling else True)
 
+    net, optimizer, labeled_loader, pseudo_labeled_loader = accelerator.prepare(net, optimizer,
+                                                                                labeled_loader,
+                                                                                pseudo_labeled_loader)
+
     # Pseudo labeling
     if args.labeling:
         time_now = time.time()
         sub_base = CIFAR10.base_folder
         filename = os.path.join(base, sub_base, args.train_set + '_pseudo')
         generate_pseudo_labels(net=net, device=device, loader=unlabeled_loader, filename=filename,
-                               label_ratio=args.label_ratio, num_images=num_images)
+                               label_ratio=args.label_ratio, num_images=num_images,
+                               is_mixed_precision=args.mixed_precision)
         print('Pseudo labeling time: %.2fs' % (time.time() - time_now))
     else:
         # Mutual-training
@@ -402,7 +416,8 @@ if __name__ == '__main__':
                                                T_max=args.epochs * len(pseudo_labeled_loader))
         writer = SummaryWriter('logs/' + exp_name)
 
-        best_acc = test(loader=val_loader, device=device, net=net, fine_grain=args.fine_grain)
+        best_acc = test(loader=val_loader, device=device, net=net, fine_grain=args.fine_grain,
+                        is_mixed_precision=args.mixed_precision)
         save_checkpoint(net=net, optimizer=None, lr_scheduler=None, is_mixed_precision=args.mixed_precision)
         print('Original acc: ' + str(best_acc))
 
