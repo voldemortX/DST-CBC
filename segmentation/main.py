@@ -170,8 +170,8 @@ def train(writer, loader_c, loader_sup, validation_loader, device, criterion, ne
     if with_sup:
         iter_sup = iter(loader_sup)
 
-    if is_mixed_precision:
-        scaler = GradScaler()
+    # if is_mixed_precision:
+    #     scaler = GradScaler()
 
     # Training
     running_stats = {'disagree': -1, 'current_win': -1, 'avg_weights': 1.0, 'loss': 0.0}
@@ -206,23 +206,23 @@ def train(writer, loader_c, loader_sup, validation_loader, device, criterion, ne
             inputs = inputs.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
-            with autocast(is_mixed_precision):
-                outputs = net(inputs)['out']
-                outputs = torch.nn.functional.interpolate(outputs, size=input_sizes[0], mode='bilinear', align_corners=True)
-                conf_mat.update(labels.flatten(), outputs.argmax(1).flatten())
+            # with autocast(is_mixed_precision):
+            outputs = net(inputs)['out']
+            outputs = torch.nn.functional.interpolate(outputs, size=input_sizes[0], mode='bilinear', align_corners=True)
+            conf_mat.update(labels.flatten(), outputs.argmax(1).flatten())
 
-                if with_sup:
-                    loss, stats = criterion(outputs, probs, inputs_c.shape[0])
-                else:
-                    loss, stats = criterion(outputs, labels)
-
-            if is_mixed_precision:
-                accelerator.backward(scaler.scale(loss))
-                scaler.step(optimizer)
-                scaler.update()
+            if with_sup:
+                loss, stats = criterion(outputs, probs, inputs_c.shape[0])
             else:
-                accelerator.backward(loss)
-                optimizer.step()
+                loss, stats = criterion(outputs, labels)
+
+            # if is_mixed_precision:
+            #     accelerator.backward(scaler.scale(loss))
+            #     scaler.step(optimizer)
+            #     scaler.update()
+            # else:
+            accelerator.backward(loss)
+            optimizer.step()
 
             lr_scheduler.step()
 
@@ -296,10 +296,10 @@ def test_one_set(loader, device, net, categories, num_classes, output_size, is_m
     with torch.no_grad():
         for image, target in tqdm(loader):
             image, target = image.to(device), target.to(device)
-            with autocast(is_mixed_precision):
-                output = net(image)['out']
-                output = torch.nn.functional.interpolate(output, size=output_size, mode='bilinear', align_corners=True)
-                conf_mat.update(target.flatten(), output.argmax(1).flatten())
+            # with autocast(is_mixed_precision):
+            output = net(image)['out']
+            output = torch.nn.functional.interpolate(output, size=output_size, mode='bilinear', align_corners=True)
+            conf_mat.update(target.flatten(), output.argmax(1).flatten())
 
     acc_global, acc, iu = conf_mat.compute()
     print(categories)
