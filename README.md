@@ -50,6 +50,7 @@ pip install torch==1.6.0 torchvision==0.7.0
 
 ```
 pip install packaging accelerate future matplotlib tensorboard tqdm
+pip install git+https://github.com/ildoonet/pytorch-randaugment
 ```
 
 ### 3. Download the code and prepare the scripts:
