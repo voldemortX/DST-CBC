@@ -1,3 +1,11 @@
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/semi-supervised-semantic-segmentation-via/semi-supervised-semantic-segmentation-on-10)](https://paperswithcode.com/sota/semi-supervised-semantic-segmentation-on-10?p=semi-supervised-semantic-segmentation-via)
+  
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/semi-supervised-semantic-segmentation-via/semi-supervised-semantic-segmentation-on-7)](https://paperswithcode.com/sota/semi-supervised-semantic-segmentation-on-7?p=semi-supervised-semantic-segmentation-via)
+
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/semi-supervised-semantic-segmentation-via/semi-supervised-semantic-segmentation-on-3)](https://paperswithcode.com/sota/semi-supervised-semantic-segmentation-on-3?p=semi-supervised-semantic-segmentation-via)
+
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/semi-supervised-semantic-segmentation-via/semi-supervised-image-classification-on-cifar)](https://paperswithcode.com/sota/semi-supervised-image-classification-on-cifar?p=semi-supervised-semantic-segmentation-via)
+
 # DMT: Dynamic Mutual Training for Semi-Supervised Learning
 
 This repository contains the code for our paper [DMT: Dynamic Mutual Training for Semi-Supervised Learning](https://arxiv.org/abs/2004.08514), a concise and effective method for semi-supervised semantic segmentation & image classification.
