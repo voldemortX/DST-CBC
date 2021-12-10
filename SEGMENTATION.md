@@ -95,6 +95,8 @@ For segmentation experiments, we need COCO pre-trained weights same as previous 
 
 ImageNet pre-trained weights will be automatically downloaded when running code.
 
+**\[Note\]** If you can't download the COCO weights, try the [Google Drive link](https://drive.google.com/file/d/14j4RoLqnfGeKaBN7m11u8XUnuov6PgYp/view?usp=sharing).
+
 ## Run the code
 
 For multi-GPU/TPU/Distributed machine users, first run:
