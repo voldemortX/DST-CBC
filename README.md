@@ -20,6 +20,10 @@ Also, for older PyTorch version (<1.6.0) users, or the **exact** same environmen
 
 ## News
 
+### 2022.5.5
+
+After a 17-months review (that is excluding prior rejections at ECCV 20, AAAI 21), DMT is finally **accepted** at Pattern Recognition. Cheers! The arxiv version will soon be updated, once we have the final publish format.
+
 ### 2021.6.7
 
 **Multi-GPU** training support (based on [Accelerate](https://github.com/huggingface/accelerate)) is added, and the whole project is upgraded to PyTorch 1.6.
@@ -95,11 +99,11 @@ If you have any questions that are not answerable with Google, feel free to cont
 ## Citation
 
 ```
-@article{feng2020dmt,
+@article{feng2022dmt,
   title={DMT: Dynamic Mutual Training for Semi-Supervised Learning},
   author={Feng, Zhengyang and Zhou, Qianyu and Gu, Qiqi and Tan, Xin and Cheng, Guangliang and Lu, Xuequan and Shi, Jianping and Ma, Lizhuang},
-  journal={arXiv preprint arXiv:2004.08514},
-  year={2020}
+  journal={Pattern Recognition},
+  year={2022}
 }
 ```
 
