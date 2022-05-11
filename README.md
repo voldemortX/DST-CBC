@@ -103,7 +103,8 @@ If you have any questions that are not answerable with Google, feel free to cont
   title={DMT: Dynamic Mutual Training for Semi-Supervised Learning},
   author={Feng, Zhengyang and Zhou, Qianyu and Gu, Qiqi and Tan, Xin and Cheng, Guangliang and Lu, Xuequan and Shi, Jianping and Ma, Lizhuang},
   journal={Pattern Recognition},
-  year={2022}
+  year={2022},
+  doi={10.1016/j.patcog.2022.108777}
 }
 ```
 
