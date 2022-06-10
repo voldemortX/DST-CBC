@@ -104,6 +104,8 @@ If you have any questions that are not answerable with Google, feel free to cont
   author={Feng, Zhengyang and Zhou, Qianyu and Gu, Qiqi and Tan, Xin and Cheng, Guangliang and Lu, Xuequan and Shi, Jianping and Ma, Lizhuang},
   journal={Pattern Recognition},
   year={2022},
+  volume={130},
+  pages={108777},
   doi={10.1016/j.patcog.2022.108777}
 }
 ```
