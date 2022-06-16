@@ -20,6 +20,10 @@ Also, for older PyTorch version (<1.6.0) users, or the **exact** same environmen
 
 ## News
 
+### 2022.6.16
+
+The arxiv version is in long single column format. The Pattern Recognition website has the [double-column version](https://www.sciencedirect.com/science/article/abs/pii/S0031320322002588), with the same content.
+
 ### 2022.5.5
 
 After a 17-months review (that is excluding prior rejections at ECCV 20, AAAI 21), DMT is finally **accepted** at Pattern Recognition. Cheers! The arxiv version will soon be updated, once we have the final publish format.
